@@ -24,7 +24,7 @@ lapply(c("tidyverse",
 gu_api_key() # run this interactive function
 
 # We want to query the API on articles featuring Ukraine since Jan 1 2023
-dat <- gu_content(query = "", from_date = "") # making a tibble
+dat <- gu_content(query = "Ukraine", from_date = "2023-01-01") # making a tibble
 
 # We'll save this data
 saveRDS(dat, "data/df2023")
@@ -37,14 +37,16 @@ head(df) # checking our tibble
 
 df <- df[] # see if you can subset the object to focus on the articles we want
 
+df <- df[df$type == "article" & df$section_id == "world",]
+
 which(duplicated(df$web_title) == TRUE) # sometimes there are duplicates...
 df <- df[!duplicated(df$web_title),] # which we can remove
 
 ### B. Making a corpus
 # We can use the corpus() function to convert our df to a quanteda corpus
 corpus_ukr <- corpus(df, 
-                     docid_field = "", 
-                     text_field = "") # select the correct column here
+                     docid_field = "headline", 
+                     text_field = "body_text") # select the correct column here
 
 # Checking our corpus
 summary(corpus_ukr, 5)
@@ -62,7 +64,11 @@ test <- as.character(corpus_ukr)[1] # make a test object
 
 stri_replace_first(test, 
                    replacement = "", # nothing here (i.e. we're removing)
-                   regex = "") #try to write the correct regex - this may help: https://www.rexegg.com/regex-quickstart.html
+                   regex = "^.+?\"") #try to write the correct regex - this may help: https://www.rexegg.com/regex-quickstart.html
+
+stri_replace_first(test, 
+                   replacement = "", # nothing here (i.e. we're removing)
+                   regex = "^.+?\"")
 
 # Sometimes there's also boilerplate at the end of an article after a big centre dot. 
 as.character(corpus_ukr)[which(grepl("\u2022.+$", corpus_ukr))[1]]
@@ -98,6 +104,7 @@ head(stop_list)                   # show first 6 stopwords from stopword list.
 # Notice how these stopwords are also lowercased.
 
 # The tokens_remove() function allows us to apply the stop_list to our toks object
+?tokens_remove
 toks <- tokens_remove(toks, stop_list)
 
 toks[10] # print list of tokens from 10th article without stop words.  
@@ -167,3 +174,28 @@ dfm_ukr %>%
 # and wordcloud that results.
 
 df2022 <- readRDS("data/df2022")
+
+head(df2022)
+
+df2022 <- df2022[]
+
+# Check duplicates
+which(duplicated(df2022$web_title)==TRUE)
+
+# Remove duplicates
+df2022 <- df2022[!duplicated(df2022$web_title),]
+
+# B. Making a corpus
+# Converting the df into a quanteda corpus
+
+corpus_ukr2022 <-corpus(df2022,
+                        docid_field = "headline",
+                        text_field = "body_text")
+
+summary(corpus_ukr2022, 5)
+
+
+# C. Pre-processing
+# 1. Cleaning the text with regexs and stringi
+
+# Looking at the first article
